@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+/* -----------------------------
+   EMBEDDED TYPES
+------------------------------*/
+
+type AdminOtpHistory {
+  otpHash    String
+  channel    String   // EMAIL | SMS | WHATSAPP
+  status     String   // SENT | USED | EXPIRED | FAILED
+  createdAt  DateTime
+  expiresAt  DateTime
+  device     String?
+  os         String?
+  ip         String?
+}
+
+type AdminStatusLog {
+  status      String
+  remark      String?
+  updatedBy   String?
+  updatedAt   DateTime
+}
+
+type AdminSessionLog {
+  sessionId    String
+  device       String?
+  deviceType   String?   // MOBILE | TABLET | DESKTOP
+  deviceName   String?   // iPhone 15, MacBook Air, Samsung etc
+  os           String?
+  browser      String?
+  ip           String?
+  location     String?
+  isCurrent    Boolean?
+  isActive     Boolean
+  createdAt    DateTime
+  expiresAt    DateTime?
+  lastSeenAt   DateTime?
+}
+
+type AdminActivityLog {
+  action      String
+  description String?
+  device      String?
+  os          String?
+  browser     String?
+  ip          String?
+  createdAt   DateTime
+}
+
+type AdminBranchInfo {
+  branchName   String
+  branchCode   String?
+  city         String?
+  state        String?
+  address      String?
+  mobile       String?
+  createdAt    DateTime
+}
+
+type NotificationSender {
+  userId      String?
+  userType    String?   // ADMIN | TRUCKER | SHIPPER | SYSTEM
+  adminType   String?   // SUPERADMIN | ADMIN | etc
+  name        String?
+  mobile      String?
+  email       String?
+}
+
+type NotificationReceiver {
+  userId        String?
+  userType      String?   // ADMIN | TRUCKER | SHIPPER
+  adminType     String?   // if receiver is admin
+  name          String?
+  mobile        String?
+  email         String?
+  isRead        Boolean   @default(false)
+  readAt        DateTime?
+  isDeleted     Boolean   @default(false)
+  deletedAt     DateTime?
+  deliveredAt   DateTime?
+}
+
+type NotificationMedia {
+  url           String?
+  type          String?   // IMAGE | PDF | VIDEO | AUDIO | OTHER
+  name          String?
+}
+
+type NotificationMeta {
+  key           String
+  value         String
+}
+
+
+
+/* -----------------------------
+   ADMIN MODEL
+------------------------------*/
+
+model Admin {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // UID SYSTEM
+  uid1 String @unique // mobile based uid
+  uid2 String @unique // employee id
+  uid3 String         // ADMIN
+  uid4 String @unique // SUPERADMIN | ADMIN | DATA_MANAGER | PAYMENT_MANAGER | TRAFFIC_PERSON unique id
+
+  // BASIC IDENTITY
+  username     String @unique
+  name         String
+  designation  String // superadmin | admin | data manager | payment manager | traffic person
+  adminType    String // SUPERADMIN | ADMIN | DATA_MANAGER | PAYMENT_MANAGER | TRAFFIC_PERSON
+  companyName  String?
+  mobileNumber String @unique
+  email        String @unique
+  profileImageUrl String?
+  
+  // AUTH
+  passwordHash String
+  tpinHash     String?
+  status       String @default("ACTIVE") // ACTIVE | BLOCKED | INACTIVE | SUSPENDED
+  remark       String?
+
+  // OTP STATE
+  currentOtpHash      String?
+  currentOtpChannel   String?
+  currentOtpExpiresAt DateTime?
+  otpAttemptCount     Int      @default(0)
+  lastOtpSentAt       DateTime?
+  otpHistory          AdminOtpHistory[]
+
+  // PROFILE
+  addressLine1  String?
+  addressLine2  String?
+  area          String?
+  landmark      String?
+  city          String?
+  state         String?
+  pincode       String?
+
+  // KYC / ID
+  aadhaarNumber String?
+  aadhaarUrl    String?
+  panNumber     String?
+  panUrl        String?
+
+  // BANK / PAYMENT
+  bankName       String?
+  branchName     String?
+  holderName     String?
+  accountNumber  String?
+  ifscCode       String?
+  upiId          String?
+  bankProofUrl   String?
+
+  // ACCESS + TRACKING
+  permissions String[]
+  referCount  Int      @default(0)
+  inviteUrl   String?  @unique
+
+  // BRANCH ASSIGNMENT
+  branches    AdminBranchInfo[]
+  branchCount Int      @default(0)
+
+  // LOGS
+  statusLogs  AdminStatusLog[]
+  sessions    AdminSessionLog[]
+  history     AdminActivityLog[]
+
+  deletedAt    DateTime?
+  deletedBy    String?
+  deleteReason String?
+
+  // AUDIT
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+}
+
+
+model Notification {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  title         String
+  message       String
+  colorCode     String?   // #268999 etc
+  type          String    // SYSTEM | PAYMENT | INDENT | USER | WEBSITE | ALERT
+
+  senderList    NotificationSender[]
+  receiverList  NotificationReceiver[]
+
+  mode          String    @default("AUTO") // AUTO | MANUAL
+  priority      String    @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+
+  isDeleted     Boolean   @default(false)
+  deletedAt     DateTime?
+
+  eventDateTime DateTime?
+  link          String?
+  media         NotificationMedia[]
+  meta          NotificationMeta[]
+
+  redirection   String?   // page path or action path
+  remark        String?
+
+  createdAt     DateTime  @default(now())
+  createdBy     String?
+}
