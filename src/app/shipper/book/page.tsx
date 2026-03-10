@@ -1,279 +1,224 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import {
+  Search,
+  Filter,
+  Info,
+  Pencil,
+  Ticket,
+  Trash2,
+  Plus,
+  X,
+} from "lucide-react";
 
 type Trip = {
   id: number;
-  state: string;
-  city: string;
-  pincode: string;
-  truckType: string;
-  material: string;
-  language: string;
+  date: string;
+  tripNo: string;
   source: string;
   destination: string;
-  amount: number;
-  date: string;
+  status: string;
+  interest: number;
+  matches: number;
+  material: string;
 };
 
-const tripsData: Trip[] = [
+const DATA: Trip[] = [
   {
-    id: 101,
-    state: "Gujarat",
-    city: "Surat",
-    pincode: "395001",
-    truckType: "Open Truck",
-    material: "Steel",
-    language: "Hindi",
-    source: "Surat",
-    destination: "Ahmedabad",
-    amount: 15000,
+    id: 1,
     date: "2026-03-10",
-  },
-  {
-    id: 102,
-    state: "Gujarat",
-    city: "Vadodara",
-    pincode: "390001",
-    truckType: "Container",
-    material: "Textile",
-    language: "English",
-    source: "Vadodara",
+    tripNo: "TRIP1001",
+    source: "Ahmedabad",
     destination: "Mumbai",
-    amount: 22000,
-    date: "2026-03-12",
+    status: "Pending",
+    interest: 4,
+    matches: 2,
+    material: "Steel",
   },
   {
-    id: 103,
-    state: "Maharashtra",
-    city: "Pune",
-    pincode: "411001",
-    truckType: "Open Truck",
-    material: "Cement",
-    language: "Hindi",
-    source: "Pune",
-    destination: "Rajkot",
-    amount: 18000,
-    date: "2026-03-15",
+    id: 2,
+    date: "2026-03-09",
+    tripNo: "TRIP1002",
+    source: "Surat",
+    destination: "Delhi",
+    status: "Active",
+    interest: 7,
+    matches: 3,
+    material: "Textile",
   },
 ];
 
 export default function BookPage() {
   const [search, setSearch] = useState("");
-  const [state, setState] = useState("");
-  const [city, setCity] = useState("");
-  const [pincode, setPincode] = useState("");
-  const [truckType, setTruckType] = useState("");
-  const [material, setMaterial] = useState("");
-  const [language, setLanguage] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [showFilter, setShowFilter] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<Trip | null>(null);
+  const [selected, setSelected] = useState<Trip | null>(null);
 
-  const filteredTrips = useMemo(() => {
-    return tripsData.filter((trip) => {
-      const matchSearch =
-        search === "" ||
-        trip.id.toString().includes(search) ||
-        trip.source.toLowerCase().includes(search.toLowerCase()) ||
-        trip.destination.toLowerCase().includes(search.toLowerCase());
+  const [filters, setFilters] = useState({
+    from: "",
+    to: "",
+    status: "",
+    interest: "",
+    matches: "",
+  });
 
-      const matchState = state === "" || trip.state === state;
-      const matchCity = city === "" || trip.city === city;
-      const matchPin = pincode === "" || trip.pincode.includes(pincode);
-      const matchTruck = truckType === "" || trip.truckType === truckType;
-      const matchMaterial = material === "" || trip.material === material;
-      const matchLanguage = language === "" || trip.language === language;
+  const filtered = DATA.filter((item) => {
+    const text =
+      item.tripNo +
+      item.source +
+      item.destination +
+      item.status +
+      item.material;
 
-      const matchDate =
-        (!startDate || trip.date >= startDate) &&
-        (!endDate || trip.date <= endDate);
+    const matchSearch = text.toLowerCase().includes(search.toLowerCase());
 
-      return (
-        matchSearch &&
-        matchState &&
-        matchCity &&
-        matchPin &&
-        matchTruck &&
-        matchMaterial &&
-        matchLanguage &&
-        matchDate
-      );
-    });
-  }, [
-    search,
-    state,
-    city,
-    pincode,
-    truckType,
-    material,
-    language,
-    startDate,
-    endDate,
-  ]);
+    const matchDate =
+      (!filters.from || item.date >= filters.from) &&
+      (!filters.to || item.date <= filters.to);
+
+    const matchStatus = filters.status
+      ? item.status === filters.status
+      : true;
+
+    const matchInterest = filters.interest
+      ? item.interest >= Number(filters.interest)
+      : true;
+
+    const matchMatches = filters.matches
+      ? item.matches >= Number(filters.matches)
+      : true;
+
+    return (
+      matchSearch &&
+      matchDate &&
+      matchStatus &&
+      matchInterest &&
+      matchMatches
+    );
+  });
 
   return (
     <div className="p-6 space-y-6 text-gray-500">
 
-      <h1 className="text-2xl font-bold">Moves / Book Trip</h1>
+      {/* TITLE */}
+      <div className="flex justify-between items-center">
 
-      {/* FILTER CARD */}
-      <div className="bg-white p-5 rounded-xl shadow">
+        <h1 className="text-2xl font-black text-[#1a5d68]">
+          Book Truck
+        </h1>
 
-        <div className="grid md:grid-cols-4 gap-4">
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-2 bg-[#1a5d68] text-white px-4 py-2 rounded-xl text-sm"
+        >
+          <Plus size={16} /> Create
+        </button>
+
+      </div>
+
+      {/* SEARCH + FILTER */}
+      <div className="flex flex-wrap gap-4 items-center">
+
+        <div className="relative w-80">
+
+          <Search
+            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
 
           <input
             type="text"
-            placeholder="Search Trip"
-            className="border p-2 rounded"
+            placeholder="Search trip / source / destination..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 py-2 border rounded-xl text-sm"
           />
-
-          <select
-            className="border p-2 rounded"
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-          >
-            <option value="">State</option>
-            <option value="Gujarat">Gujarat</option>
-            <option value="Maharashtra">Maharashtra</option>
-          </select>
-
-          <select
-            className="border p-2 rounded"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-          >
-            <option value="">City</option>
-            <option value="Surat">Surat</option>
-            <option value="Vadodara">Vadodara</option>
-            <option value="Pune">Pune</option>
-          </select>
-
-          <input
-            type="text"
-            placeholder="Pin Code"
-            className="border p-2 rounded"
-            value={pincode}
-            onChange={(e) => setPincode(e.target.value)}
-          />
-
-          <select
-            className="border p-2 rounded"
-            value={truckType}
-            onChange={(e) => setTruckType(e.target.value)}
-          >
-            <option value="">Truck Type</option>
-            <option value="Open Truck">Open Truck</option>
-            <option value="Container">Container</option>
-          </select>
-
-          <select
-            className="border p-2 rounded"
-            value={material}
-            onChange={(e) => setMaterial(e.target.value)}
-          >
-            <option value="">Material</option>
-            <option value="Steel">Steel</option>
-            <option value="Textile">Textile</option>
-            <option value="Cement">Cement</option>
-          </select>
-
-          <select
-            className="border p-2 rounded"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-          >
-            <option value="">Language</option>
-            <option value="English">English</option>
-            <option value="Hindi">Hindi</option>
-          </select>
-
-          {/* DATE RANGE FIX */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-
-            <input
-              type="date"
-              className="border p-2 rounded w-full min-w-0"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-
-            <input
-              type="date"
-              className="border p-2 rounded w-full min-w-0"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-
-          </div>
 
         </div>
+
+        <button
+          onClick={() => setShowFilter(true)}
+          className="flex items-center gap-2 border px-4 py-2 rounded-xl text-sm"
+        >
+          <Filter size={16} /> Filter
+        </button>
 
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-xl shadow p-5 overflow-x-auto">
+      <div className="bg-white rounded-2xl border overflow-hidden shadow-sm">
 
-        <table className="w-full border-collapse">
+        <table className="w-full text-sm">
 
-          <thead>
-            <tr className="border-b text-left text-gray-600">
-              <th className="p-3">Trip</th>
-              <th className="p-3">City</th>
-              <th className="p-3">Truck</th>
-              <th className="p-3">Material</th>
-              <th className="p-3">Route</th>
-              <th className="p-3">Amount</th>
-              <th className="p-3">Date</th>
+          <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-black">
+            <tr>
+              <th className="p-4 text-left">Sr</th>
+              <th className="p-4 text-left">Date</th>
+              <th className="p-4 text-left">Trip</th>
+              <th className="p-4 text-left">Status</th>
+              <th className="p-4 text-left">Interest</th>
+              <th className="p-4 text-left">Matches</th>
+              <th className="p-4 text-left">Actions</th>
             </tr>
           </thead>
 
           <tbody>
 
-            {filteredTrips.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center p-5">
-                  No trips found
+            {filtered.map((row, i) => (
+
+              <tr key={row.id} className="border-t">
+
+                <td className="p-4">{i + 1}</td>
+
+                <td className="p-4">{row.date}</td>
+
+                <td className="p-4">
+
+                  <p className="font-bold">{row.tripNo}</p>
+
+                  <p className="text-xs text-gray-400">
+                    {row.source} → {row.destination}
+                  </p>
+
                 </td>
+
+                <td className="p-4">{row.status}</td>
+
+                <td className="p-4">{row.interest}</td>
+
+                <td className="p-4">{row.matches}</td>
+
+                <td className="p-4 flex gap-3">
+
+                  <button
+                    onClick={() => setSelected(row)}
+                    className="text-[#1a5d68]"
+                  >
+                    <Info size={18} />
+                  </button>
+
+                  <button
+                    onClick={() => setEditing(row)}
+                    className="text-blue-600"
+                  >
+                    <Pencil size={18} />
+                  </button>
+
+                  <button className="text-orange-500">
+                    <Ticket size={18} />
+                  </button>
+
+                  <button className="text-red-500">
+                    <Trash2 size={18} />
+                  </button>
+
+                </td>
+
               </tr>
-            ) : (
-              filteredTrips.map((trip) => (
-                <tr key={trip.id} className="border-b hover:bg-gray-50">
 
-                  <td className="p-3 font-medium">
-                    #{trip.id}
-                  </td>
-
-                  <td className="p-3">
-                    {trip.city} ({trip.state})
-                  </td>
-
-                  <td className="p-3">
-                    {trip.truckType}
-                  </td>
-
-                  <td className="p-3">
-                    {trip.material}
-                  </td>
-
-                  <td className="p-3">
-                    <span className="text-green-600">{trip.source}</span>
-                    {" → "}
-                    <span className="text-red-600">{trip.destination}</span>
-                  </td>
-
-                  <td className="p-3 font-semibold">
-                    ₹{trip.amount}
-                  </td>
-
-                  <td className="p-3">
-                    {trip.date}
-                  </td>
-
-                </tr>
-              ))
-            )}
+            ))}
 
           </tbody>
 
@@ -281,6 +226,203 @@ export default function BookPage() {
 
       </div>
 
+      {/* INFO POPUP */}
+
+      {selected && (
+
+        <Popup
+          title="Trip Info"
+          onClose={() => setSelected(null)}
+        >
+
+          <div className="space-y-2 text-sm">
+
+            <p>Trip : {selected.tripNo}</p>
+
+            <p>
+              Route : {selected.source} → {selected.destination}
+            </p>
+
+            <p>Status : {selected.status}</p>
+
+            <p>Interest : {selected.interest}</p>
+
+            <p>Matches : {selected.matches}</p>
+
+            <p>Material : {selected.material}</p>
+
+          </div>
+
+        </Popup>
+
+      )}
+
+      {/* CREATE POPUP */}
+
+      {showCreate && (
+
+        <TripForm
+          title="Create Trip"
+          onClose={() => setShowCreate(false)}
+        />
+
+      )}
+
+      {/* EDIT POPUP */}
+
+      {editing && (
+
+        <TripForm
+          title="Edit Trip"
+          onClose={() => setEditing(null)}
+        />
+
+      )}
+
+      {/* FILTER POPUP */}
+
+      {showFilter && (
+
+        <Popup
+          title="Filter"
+          onClose={() => setShowFilter(false)}
+        >
+
+          <div className="space-y-3">
+
+            <div className="grid grid-cols-2 gap-3">
+
+              <input
+                type="date"
+                className="border rounded-xl px-3 py-2 text-sm"
+                onChange={(e) =>
+                  setFilters({ ...filters, from: e.target.value })
+                }
+              />
+
+              <input
+                type="date"
+                className="border rounded-xl px-3 py-2 text-sm"
+                onChange={(e) =>
+                  setFilters({ ...filters, to: e.target.value })
+                }
+              />
+
+            </div>
+
+            <select
+              className="border rounded-xl px-3 py-2 text-sm w-full"
+              onChange={(e) =>
+                setFilters({ ...filters, status: e.target.value })
+              }
+            >
+              <option value="">All Status</option>
+              <option>Pending</option>
+              <option>Active</option>
+              <option>Closed</option>
+            </select>
+
+            <input
+              placeholder="Min Interest"
+              type="number"
+              className="border rounded-xl px-3 py-2 text-sm w-full"
+              onChange={(e) =>
+                setFilters({ ...filters, interest: e.target.value })
+              }
+            />
+
+            <input
+              placeholder="Min Matches"
+              type="number"
+              className="border rounded-xl px-3 py-2 text-sm w-full"
+              onChange={(e) =>
+                setFilters({ ...filters, matches: e.target.value })
+              }
+            />
+
+          </div>
+
+        </Popup>
+
+      )}
+
     </div>
+  );
+}
+
+/* ---------- POPUP ---------- */
+
+function Popup({
+  title,
+  children,
+  onClose,
+}: {
+  title: string;
+  children: any;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+
+      <div className="bg-white rounded-2xl p-6 w-[420px] relative">
+
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3"
+        >
+          <X size={18} />
+        </button>
+
+        <h3 className="font-black text-lg mb-4">{title}</h3>
+
+        {children}
+
+      </div>
+
+    </div>
+  );
+}
+
+/* ---------- CREATE / EDIT FORM ---------- */
+
+function TripForm({
+  title,
+  onClose,
+}: {
+  title: string;
+  onClose: () => void;
+}) {
+  return (
+    <Popup title={title} onClose={onClose}>
+
+      <div className="space-y-3">
+
+        <input
+          placeholder="Trip No"
+          className="border rounded-xl px-3 py-2 text-sm w-full"
+        />
+
+        <input
+          placeholder="Source"
+          className="border rounded-xl px-3 py-2 text-sm w-full"
+        />
+
+        <input
+          placeholder="Destination"
+          className="border rounded-xl px-3 py-2 text-sm w-full"
+        />
+
+        <input
+          placeholder="Material"
+          className="border rounded-xl px-3 py-2 text-sm w-full"
+        />
+
+        <button className="w-full bg-[#1a5d68] text-white py-2 rounded-xl text-sm">
+          Save
+        </button>
+
+      </div>
+
+    </Popup>
   );
 }

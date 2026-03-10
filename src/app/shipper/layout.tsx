@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import ShipperHeader from "@/components/admin/ShipperHeader";
-import ShipperSidebar from "@/components/admin/ShipperSidebar";
+import ShipperHeader from "@/components/shipper/ShipperHeader";
+import ShipperSidebar from "@/components/shipper/ShipperSidebar";
 
 export default function AdminLayout({
   children,
